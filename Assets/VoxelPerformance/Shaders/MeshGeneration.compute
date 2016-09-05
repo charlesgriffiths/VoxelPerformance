@@ -1,0 +1,154 @@
+﻿// VoxelPerformance/Shaders/MeshGeneration.compute
+// Copyright 2016 Charles Griffiths
+
+#define EmptyVoxel 0
+
+#pragma kernel FaceGen
+#pragma kernel FaceSum
+#pragma kernel FaceCopy
+
+#pragma kernel GetFaces
+
+
+StructuredBuffer<uint> MapVoxels;
+StructuredBuffer<uint> MapHeights;
+RWStructuredBuffer<uint> ShownVoxelCount;
+RWStructuredBuffer<uint> ShownVoxelOffset;
+
+RWStructuredBuffer<uint> ShownVoxels;
+RWStructuredBuffer<uint> SolidVoxels;
+
+
+uint facesForVoxel( uint x, uint y, uint z );
+
+
+int getVoxel( uint x, uint y, uint z )
+{
+uint voxels = MapVoxels[(z * 256 + x) * 64 + y/4]; // four voxels per int
+
+  if (0 == (y%4)) return (voxels / (256*256*256)) % 256;
+  if (1 == (y%4)) return (voxels / (256*256)) % 256;
+  if (2 == (y%4)) return (voxels / 256) % 256;
+
+  return voxels % 256;
+}
+
+
+// Generate visible voxels.
+[numthreads(32,1,32)]
+void FaceGen( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
+{
+// tid is { 0..31, 0, 0..31 }
+// gid is { 0..7, 0, 0..7 }
+int column = (gid.z * 32 + tid.z) * 256 + gid.x * 32 + tid.x;
+
+int voxeloutposition = column * 256; // each voxel output takes up one int
+int shownvoxels = 0;
+uint maxHeight = MapHeights[column];
+
+  if (maxHeight >= 256) maxHeight = 255;
+
+uint x, z;
+
+  x = (gid.x * 32 + tid.x) % 256;
+  z = (gid.z * 32 + tid.z) % 256;
+
+bool edge = (0 == x || 0 == z || 255 == x || 255 == z);
+
+  for (uint y = 0; y <= maxHeight; y++)
+  {
+  uint voxelid = getVoxel( x, y, z ); 
+
+    if (EmptyVoxel != voxelid)
+    {
+      if (edge || maxHeight == y || (0 != y && EmptyVoxel == getVoxel( x, y-1, z ))
+               || EmptyVoxel == getVoxel( x, y, z+1 ) || EmptyVoxel == getVoxel( x, y, z-1 )
+               || EmptyVoxel == getVoxel( x+1, y, z ) || EmptyVoxel == getVoxel( x-1, y, z )
+               || EmptyVoxel == getVoxel( x, y+1, z ))
+      {
+        ShownVoxels[voxeloutposition+shownvoxels] = ((voxelid * 256 + x) * 256 + y) * 256 + z;
+        shownvoxels++;
+      }
+    }
+  }
+
+  ShownVoxelCount[column] = shownvoxels;
+}
+
+
+RWStructuredBuffer<uint> TotalVoxelCount;
+
+// Compute offsets into a tightly packed array
+// First offset is always zero so we store end positions for each small array
+[numthreads(1,1,1)]
+void FaceSum( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
+{
+uint sum = 0;
+
+  for (uint i=0; i < 256 * 256; i++)
+  {
+    sum += ShownVoxelCount[i];
+    ShownVoxelOffset[i] = sum;
+  }
+
+  TotalVoxelCount[0] = sum;
+}
+
+
+// Copy one column of voxels into a tightly packed array
+[numthreads(32,1,32)]
+void FaceCopy( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
+{
+// tid is { 0..31, 0, 0..31 }
+// gid is { 0..7, 0, 0..7 }
+int column = (gid.z * 32 + tid.z) * 256 + gid.x * 32 + tid.x;
+
+int solidoffset;
+int voxelposition = column * 256;
+
+  if (0 == column)
+    solidoffset = 0;
+  else
+    solidoffset = ShownVoxelOffset[column-1];
+
+  for (int i=ShownVoxelCount[column]-1; i>=0; i--)
+    SolidVoxels[solidoffset+i] = ShownVoxels[voxelposition+i];
+}
+
+
+
+
+RWStructuredBuffer<uint> SolidFaces;
+
+// For each voxel, replace voxel id with data about visible faces
+[numthreads(32,1,32)]
+void GetFaces( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
+{
+// tid is { 0..31, 0, 0..31 }
+// gid is { 0..n, 0, 0 }
+uint voxelposition = (gid.x * 32 + tid.z) * 32 + tid.x;
+
+  if (voxelposition >= TotalVoxelCount[0]) return;
+
+uint x, y, z, voxeldata;
+uint voxel = SolidVoxels[voxelposition];
+uint faces = voxel % 0x1000000;
+
+  z = voxel % 256;
+
+  voxel /= 256;
+  y = voxel % 256;
+
+  voxel /= 256;
+  x = voxel % 256;
+
+  if (  0 == x || EmptyVoxel == getVoxel( x-1, y, z )) faces +=  0x1000000;
+  if (255 == x || EmptyVoxel == getVoxel( x+1, y, z )) faces +=  0x2000000;
+  if (  0 == y || EmptyVoxel == getVoxel( x, y-1, z )) faces +=  0x4000000;
+  if (255 == y || EmptyVoxel == getVoxel( x, y+1, z )) faces +=  0x8000000;
+  if (  0 == z || EmptyVoxel == getVoxel( x, y, z-1 )) faces += 0x10000000;
+  if (255 == z || EmptyVoxel == getVoxel( x, y, z+1 )) faces += 0x20000000;
+
+  SolidFaces[voxelposition] = faces;
+}
+

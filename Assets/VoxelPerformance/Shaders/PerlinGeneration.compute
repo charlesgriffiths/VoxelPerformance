@@ -1,0 +1,160 @@
+﻿// VoxelPerformance/Shaders/PerlinGeneration.compute
+// Portions of the following shader program having to do with Perlin Noise are licensed as described below.
+// All other sections are Copyright 2016 Charles Griffiths
+
+#pragma kernel PerlinMapGen
+
+
+float3 MapOffset;
+
+
+RWStructuredBuffer<uint> MapVoxels;
+RWStructuredBuffer<int> MapHeights;
+
+
+float Perlin2D( float2 P );
+
+
+
+uint generateVoxel( int y, int height )
+{
+  if (y > height) return 0;  // air
+
+  if (y > 45) return 1;  // grass
+
+  if (y < 40) return 2;  // rock
+
+  return 3;  // sand
+}
+
+
+void generateMapColumn( int column, int height )
+{
+int terrainHeight = 0;
+
+  for (int i=0; i<64; i++)
+  {
+  uint voxels = 0;
+
+    for (int j=0; j<4; j++)
+    {
+    uint voxel = generateVoxel( i*4+j, height ) % 256;
+
+      voxels *= 256;
+      voxels += voxel;
+
+      if (voxel != 0) terrainHeight = i*4+j;
+    }
+
+    MapVoxels[column*64+i] = voxels;
+  }
+
+  MapHeights[column] = terrainHeight;
+}
+
+
+
+[numthreads(32,1,32)]
+void PerlinMapGen( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
+{
+// tid is { 0..31, 0, 0..31 }
+// gid is { 0..7, 0, 0..7 }
+float2 P = MapOffset.xz + tid.xz + 32 * gid.xz;
+int column = (gid.z * 32 + tid.z) * 256 + gid.x * 32 + tid.x;
+
+float mountain = 100*Perlin2D( P/314 );
+float ocean = 75*Perlin2D( P/777 );
+                                              
+float height = clamp( 40 + mountain - ocean, 0, 255 );
+
+  generateMapColumn( column, (int) floor( height ) );
+}
+
+
+
+
+
+
+float Perlin2D( float2 P )
+{
+  P = P * 2 + float2( 5000, 5000 );
+
+//  https://github.com/BrianSharpe/Wombat/blob/master/Perlin2D.glsl
+
+// establish our grid cell and unit position
+float2 Pi = floor( P );
+float4 Pf_Pfmin1 = P.xyxy - float4( Pi, Pi + 1.0 );
+
+// calculate the hash
+float4 Pt = float4( Pi.xy, Pi.xy + 1.0 );
+
+  Pt = Pt - floor(Pt * ( 1.0 / 71.0 )) * 71.0;
+  Pt += float2( 26.0, 161.0 ).xyxy;
+  Pt *= Pt;
+  Pt = Pt.xzxz * Pt.yyww;
+
+float4 hash_x = frac( Pt * ( 1.0 / 951.135664 ));
+float4 hash_y = frac( Pt * ( 1.0 / 642.949883 ));
+
+// calculate the gradient results
+float4 grad_x = hash_x - 0.49999;
+float4 grad_y = hash_y - 0.49999;
+float4 grad_results = rsqrt( grad_x * grad_x + grad_y * grad_y ) * ( grad_x * Pf_Pfmin1.xzxz + grad_y * Pf_Pfmin1.yyww );
+
+// Classic Perlin Interpolation
+grad_results *= 1.4142135623730950488016887242097;  // scale things to a strict -1.0->1.0 range  *= 1.0/sqrt(0.5)
+
+float2 blend = Pf_Pfmin1.xy * Pf_Pfmin1.xy * Pf_Pfmin1.xy * (Pf_Pfmin1.xy * (Pf_Pfmin1.xy * 6.0 - 15.0) + 10.0);
+float4 blend2 = float4( blend, float2( 1.0 - blend ));
+
+  return dot( grad_results, blend2.zxzx * blend2.wwyy );
+}
+
+
+
+
+/// Portions of the above program are derived from code that is licensed as follows:
+// Perlin Noise Functions --
+
+//
+//	Code repository for GPU noise development blog
+//	http://briansharpe.wordpress.com
+//	https://github.com/BrianSharpe
+//
+//	I'm not one for copyrights.  Use the code however you wish.
+//	All I ask is that credit be given back to the blog or myself when appropriate.
+//	And also to let me know if you come up with any changes, improvements, thoughts or interesting uses for this stuff. :)
+//	Thanks!
+//
+//	Brian Sharpe
+//	brisharpe CIRCLE_A yahoo DOT com
+//	http://briansharpe.wordpress.com
+//	https://github.com/BrianSharpe
+//
+//===============================================================================
+//  Scape Software License
+//===============================================================================
+//
+//Copyright (c) 2007-2012, Giliam de Carpentier
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without
+//modification, are permitted provided that the following conditions are met: 
+//
+//1. Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer. 
+//2. Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution. 
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNERS OR CONTRIBUTORS BE LIABLE 
+//FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+//DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+//OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+//OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.;
+
