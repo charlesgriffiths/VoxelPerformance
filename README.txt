@@ -1,14 +1,7 @@
-Thank you for trying Voxel Performance for Unity. Voxel Performance is a
-simple, high-performance asset that may be used to create and manipulate
-voxel based terrain or other large voxel structures. This asset uses a
-combination of compute shaders and a geometry shader to create map chunks
-with Perlin Noise and display them quickly. Chunks may also be extracted
-from the compute shaders as an array of raw voxel data, an array of Unity Mesh,
-or a Unity TerrainData.
+Thank you for trying Voxel Performance for Unity. Voxel Performance is a simple, high-performance asset that may be used to create and manipulate voxel based terrain or other large voxel structures. This asset uses a combination of compute shaders and a geometry shader to create map chunks with Perlin Noise and display them quickly. Chunks may also be extracted from the compute shaders as an array of raw voxel data, an array of Unity Mesh, or a Unity TerrainData.
 
 Voxel Performance is Copyright 2016 Charles Griffiths, All Rights Reserved.
-This asset is licensed to you under the terms of the Apache License 2.0 which may
-be found at http://www.apache.org/licenses/LICENSE-2.0
+This asset is licensed to you under the terms of the Apache License 2.0 which may be found at http://www.apache.org/licenses/LICENSE-2.0
 
 
 Grateful acknowledgement and credit is given to the following persons or legal entities:
