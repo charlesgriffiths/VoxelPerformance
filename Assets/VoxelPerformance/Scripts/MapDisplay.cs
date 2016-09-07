@@ -18,7 +18,6 @@ namespace VoxelPerformance
 
   public float size { get; private set; }
   public Bounds bounds { get; private set; }
-  public bool enabled { get; set; }
 
 
     public void initialize( Shader geometryShader, Color[] color, float size, Texture2D sprite, ComputeBuffer display )
