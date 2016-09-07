@@ -53,7 +53,6 @@ int terrainHeight = 0;
 }
 
 
-
 [numthreads(32,1,32)]
 void PerlinMapGen( uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID )
 {
