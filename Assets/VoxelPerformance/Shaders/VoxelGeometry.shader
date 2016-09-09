@@ -1,7 +1,7 @@
 ﻿// VoxelPerformance/Shaders/VoxelGeometry.shader
 // Copyright 2016 Charles Griffiths
 
-Shader "VoxelPerformace/VoxelGeometryShader" 
+Shader "VoxelPerformance/VoxelGeometryShader" 
 {
   Properties
   {
