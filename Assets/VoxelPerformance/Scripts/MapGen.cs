@@ -139,7 +139,7 @@ namespace VoxelPerformance
         }
 
 
-        if (++offsetIndex < chunkMax*chunkMax)
+        if (++offsetIndex < chunkMax*chunkMax && !createSponge)
         {
           mapChunkCreation.callPerlinMapGenKernel( mapOffset( offsetIndex ));
           mapChunkMeshing.callFaceGenKernel();
