@@ -1,0 +1,23 @@
+Future Directions for Voxel Performance
+
+
+More Voxels!
+
+As I work with voxels more, I want to experiment with animated voxels for liquids, clouds, weather, creatures, and other special effects.
+
+
+
+More Performance!
+
+I was unable to get LOD working with a geometry shader, but if all else fails I will eventually write a lower-detail geometry shader and hide/show overlapping MapDisplay objects to switch between that and the normal one. Some kind of noise that smooths the transition between LODs is also probably a good idea, and to be honest I don't know enough about the subject right now.
+
+Improvements to the geometry shader may be possible, but my efforts in this direction so far have very mixed results.
+
+
+
+Battle Testing!
+
+I created this asset for my own use, packaging it into what I hope is a simple, performant, and reusable form. I have ideas for later versions, but I would also love to hear yours if you're willing to share them, or let me know how you're using this asset to conquer the world of voxels.
+
+At some point I may release a more complicated voxel package that builds on the basic compute shaders and geometry shader found here. Such an asset will be based on my own game development needs, and may be unstable for quite some time so I thought it was a good idea to release this simple version and allow others to collaborate and build upon it.
+

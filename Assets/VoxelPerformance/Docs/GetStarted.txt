@@ -1,0 +1,29 @@
+Getting Started With Voxel Performance
+
+Open the scene VoxelPerformance/voxeltest
+
+In the Hierarchy tab, you should see a component named VoxelTerrain that contains the MapGen.cs script. MapGen contains a number of options that you can change to put Voxel Performance through its paces.
+
+
+* Create Sponge is a bool option that will create a level five Menger Sponge. You can read about them at https://en.wikipedia.org/wiki/Menger_sponge
+
+Creating and showing a Menger Sponge is a kind of stress test for the asset. This object is a pattern of 3,200,000 solid voxels, each of which has at least one face exposed. The raw voxel form of a Voxel Performance chunk always takes up about 16 MB (256*256*256 bytes), and the optimized form of this object sent to the geometry shader for display is about 12 MB (4 * 3,200,000). Normal voxel terrain chunks use about 512 KB in their optimized form.
+
+If Create Sponge is selected, only one chunk will be generated (the one that contains the sponge).
+
+
+* Show Voxels is a bool option that will send an optimized form of the generated chunks to the geometry shader using the Prefab in DisplayPrefab (MapDisplay).
+
+* Create Mesh is a bool option that will display each generated chunk as an array of Unity Mesh objects using the Prefab in MeshPrefab (MeshDisplay).
+
+* Create Unity Terrain is a bool option that will display each generated chunk as a Unity Terrain Object. Terrain will not be created for a Menger Sponge.
+
+* Chunk Max is the maximum X and Z dimensions of the generated map. The default value (4) will generate a 4x4 array of chunks with a total size of 1024x1024 voxels on the surface.
+
+
+* Size is the scale factor for voxels. If you change this value, you may wish to change options on the Main Camera such as Far Clipping Plane and VPCamera Speed.
+
+
+The Console will display timing for creating meshes and terrain, if those options are selected as above. It will also show a message as it creates each chunk.
+
+Press and hold Q to stop map generation and release the GPU buffers properly before you quit. Otherwise, the Console will show an error message for each buffer not released.

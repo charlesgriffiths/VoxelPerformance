@@ -35,6 +35,7 @@ namespace VoxelPerformance
 
     public void releaseDisplayBuffers()
     {
+      enabled = false;
       display.Release();
     }
 

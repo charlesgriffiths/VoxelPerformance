@@ -63,7 +63,8 @@ namespace VoxelPerformance
 
     public void releaseSolidVoxels()
     {
-      SolidVoxels.Release();
+      if (null != SolidVoxels)
+        SolidVoxels.Release();
       SolidVoxels = null;
     }
 
@@ -267,16 +268,20 @@ namespace VoxelPerformance
 
     public void releaseTemporaryBuffers()
     {
-      ShownVoxelCount.Release();
+      if (null != ShownVoxelCount)
+        ShownVoxelCount.Release();
       ShownVoxelCount = null;
 
-      ShownVoxelOffset.Release();
+      if (null != ShownVoxelOffset)
+        ShownVoxelOffset.Release();
       ShownVoxelOffset = null;
 
-      ShownVoxels.Release();
+      if (null != ShownVoxels)
+        ShownVoxels.Release();
       ShownVoxels = null;
 
-      TotalVoxelCount.Release();
+      if (null != TotalVoxelCount)
+        TotalVoxelCount.Release();
       TotalVoxelCount = null;
     }
   }

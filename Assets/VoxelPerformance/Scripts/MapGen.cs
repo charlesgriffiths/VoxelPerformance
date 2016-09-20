@@ -72,6 +72,15 @@ namespace VoxelPerformance
     Dictionary<Vector3,Terrain> terrains = new Dictionary<Vector3,Terrain>();
     void Update ()
     {
+      if ((Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift )) && Input.GetKey( KeyCode.Q ))
+      {
+        createChunks = false;
+        mapChunkMeshing.releaseSolidVoxels();
+        releaseTemporaryBuffers();
+        releaseDisplayBuffers();
+        Application.Quit();
+      }
+
       if (createChunks)
       {
       Stopwatch timer = new Stopwatch();

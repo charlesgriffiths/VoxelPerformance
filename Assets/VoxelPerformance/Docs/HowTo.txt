@@ -1,0 +1,45 @@
+How To Use Voxel Performance
+
+
+Changing Map Generation
+
+Map generation is done in the compute shader found in Shaders/PerlinGeneration.compute. For each vertical column of voxels, Perlin2D() is used to generate a mountain tendency and an ocean tendency. Voxels are packed four to an int in generateMapColumn() which calls generateVoxel() to produce a voxel id. Perlin2D() is a relatively expensive function, and this setup allows it to be called only twice for a column of 256 voxels.
+
+Currently only six voxel types (1-6) are understood by the geometry shader found in Shaders/VoxelGeometry.shader, and only three of these are used. Edit functions vert() and/or frag() to add voxel types or change how they are displayed.
+
+You may wish to edit Shaders/MeshGeneration.compute to ignore a range of voxel ids where it currently ignores EmptyVoxel (defined at the top of the file as 0) in order to implement transparent or animated voxels (such as liquid water, clouds, or leaves) as particle effects, custom shaders, or with Meshed Unity Prefabs that you create. This will require additional analysis of the raw voxel array.
+
+Alternately, you could change the appearance of Mesh or Terrain versions of the voxel maps and/or generate terrain decorations in a normal C# script.
+
+
+
+Generating Chunks on Demand
+
+As shown in MapGen.cs the general steps for creating a new chunk and preparing it for display are:
+
+
+VoxelMapData.callPerlinMapGenKernel( Vector3 );
+* This function creates an array of 16 million raw voxels using Shaders/PerlinGeneration.compute.
+
+
+VoxelMapFormat.callFaceGenKernel();
+VoxelMapFormat.callFaceSumKernel();
+VoxelMapFormat.callFaceCopyKernel();
+* These three functions determine which voxels have visible faces and create a continuous array of them in one int per voxel, which is an optimized format sent to the geometry shader. They use Shaders/MeshGeneration.compute.
+
+
+VoxelMapFormat.takeSolidVoxels();
+* This function removes the optimized surface voxel array from VoxelMapFormat so it can become the responsibility of the MapDisplay script.
+
+
+
+Unloading Chunks on Demand
+
+The optimized surface voxel array takes up about 512 MB of GPU memory per chunk. It may be freed as shown in MapDisplay.releaseDisplayBuffers().
+
+In MapDisplay.isVisible() you will find the following expression as part of the test of whether a chunk is currently visible by the Main Camera:
+
+bounds.SqrDistance( MapGen.mainCamera.transform.position ) < 1.2f * MapGen.mainCamera.farClipPlane * MapGen.mainCamera.farClipPlane
+
+A similar test with (1.2) replaced by a larger constant could be used to determine when a chunk should be unloaded and either saved and loaded when needed again, or regenerated as needed. If you save the voxel data in a file, you may wish to save both the raw and optimized forms and employ some form of data compression. I am currently working on another asset to assist with this, and it should be available sometime in October 2016.
+

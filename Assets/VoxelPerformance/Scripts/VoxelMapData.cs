@@ -65,10 +65,12 @@ namespace VoxelPerformance
 
     public void releaseTemporaryBuffers()
     {
-      MapVoxels.Release();
+      if (null != MapVoxels)
+        MapVoxels.Release();
       MapVoxels = null;
 
-      MapHeights.Release();
+      if (null != MapHeights)
+        MapHeights.Release();
       MapHeights = null;
     }
 

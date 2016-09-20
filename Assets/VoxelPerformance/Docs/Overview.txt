@@ -1,0 +1,31 @@
+Voxel Performance Overview
+
+This asset is designed to create and display voxel maps as quickly as possible with minimal impact on the CPU and main memory. It uses a chain of compute shader kernels and a geometry shader to offload work to the GPU. By default, all voxel buffers remain in GPU memory and are never transferred to main memory. Transferring voxel data to main memory could impact performance significantly.
+
+Each voxel is represented in the raw array by a single byte id. By default, 0 is empty space, 1 is green (grass), 2 is grey (rock), and 3 is yellow (sand). IDs 4-255 are currently unused and may be assigned to whatever meaning you wish by editing the geometry shader.
+
+Voxels sent to the geometry shader in the optimized format take up four bytes (one int) per surface voxel.
+
+
+Shaders/PerlinGeneration.compute This is the compute shader where random map chunks are generated using a Perlin2D noise function.
+
+
+Shaders/MeshGeneration.compute This is the compute shader that produces an optimized form of a voxel chunk suitable for input to the geometry shader.
+
+
+Shaders/VoxelGeometry.shader This is the geometry shader named VoxelPerformance/VoxelGeometryShader that accepts an array of voxels and displays them.
+
+
+Scripts/MapDisplay.cs This script displays a chunk of voxels with the geometry shader. Note that it creates its own Material object because preview is not available for a geometry shader.
+
+
+Scripts/MapGen.cs This is the main test script for the compute and geometry shaders. It either generates maps of a specified size, or a Menger Sponge.
+
+
+Scripts/VoxelMapData.cs This script pairs with Shaders/PerlinGeneration.compute to generate raw voxel chunks.
+
+
+Scripts/VoxelMapFormat.cs This script accepts raw voxel chunks from VoxelMapData.cs and optimizes them for use by the geometry shader.
+
+
+Scripts/VPCamera.cs This script is attached to the Main Camera to allow movement with the keyboard and mouse as you have them assigned in Edit->Project Settings->Input.
